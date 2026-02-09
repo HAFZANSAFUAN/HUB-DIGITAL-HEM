@@ -3,14 +3,30 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(<App />);
-  
-  // Buang loading indicator asal setelah React bermula
-  const initialLoading = document.getElementById('initial-loading');
-  if (initialLoading) {
-    initialLoading.style.display = 'none';
+const startApp = () => {
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    const root = createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    
+    // Sembunyikan loading indicator selepas React sedia
+    const loader = document.getElementById('initial-loading');
+    if (loader) {
+      loader.style.opacity = '0';
+      setTimeout(() => {
+        loader.style.display = 'none';
+      }, 500);
+    }
   }
+};
+
+// Pastikan DOM sedia sebelum run
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  startApp();
+} else {
+  document.addEventListener('DOMContentLoaded', startApp);
 }

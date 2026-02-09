@@ -8,13 +8,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
-    // DEFINE GLOBAL PROCESS OBJECT IMMEDIATELY
-    window.process = { 
-      env: { 
-        API_KEY: "" 
-      } 
-    };
-
+    // Hanya sediakan objek process jika belum wujud, jangan kosongkan yang sedia ada
+    if (!window.process) window.process = { env: {} };
+    
     // Emergency Reload if stuck
     setTimeout(() => {
       const loading = document.getElementById('initial-loading');
@@ -52,6 +48,12 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .animate-spin-custom { animation: spin 1s linear infinite; }
+    
+    @keyframes pulse-soft {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+    .animate-pulse-soft { animation: pulse-soft 2s infinite ease-in-out; }
   </style>
   <script type="importmap">
 {
@@ -66,22 +68,18 @@
   }
 }
 </script>
-  <!-- BARIS DI BAWAH INI ADALAH PENYELAMAT SKRIN STUCK -->
   <script type="module" src="index.tsx"></script>
 </head>
 <body class="text-slate-900">
   <div class="mesh-bg"></div>
   <div id="root">
-    <!-- Loading State Awal -->
     <div id="initial-loading" class="flex h-screen flex-col items-center justify-center space-y-6 text-center px-6">
       <div class="w-16 h-16 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin-custom"></div>
       <div class="space-y-2">
         <h1 class="text-xl font-black text-slate-800 tracking-tighter uppercase">HUB DIGITAL HEM SKMPJ</h1>
-        <p class="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">Sila Tunggu, Memuatkan Sistem...</p>
+        <p class="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">Memuatkan Sistem Digital...</p>
       </div>
-      
-      <!-- Hidden Error Message -->
-      <div id="error-msg" style="display: none;" class="max-w-xs p-6 bg-white rounded-3xl shadow-2xl border border-rose-100 animate-in fade-in slide-in-from-bottom-4">
+      <div id="error-msg" style="display: none;" class="max-w-xs p-6 bg-white rounded-3xl shadow-2xl border border-rose-100">
         <p class="text-xs font-bold text-rose-500 mb-4">Pemuatan mengambil masa yang lama...</p>
         <button onclick="window.location.reload()" class="w-full bg-slate-900 text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest">Cuba Muat Semula</button>
       </div>

@@ -61,20 +61,33 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
   });
 
   const generateWithAI = async (field: string, prompt: string) => {
+    if (!prompt) {
+      alert("Sila masukkan Tema Perhimpunan terlebih dahulu.");
+      return;
+    }
+
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
-      const apiKey = (window as any).process?.env?.API_KEY || "";
-      if (!apiKey) throw new Error("API Key Missing");
+      const apiKey = process.env.API_KEY;
+      if (!apiKey) {
+        throw new Error("API_KEY_MISSING");
+      }
       
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Hasilkan teks laporan perhimpunan sekolah (BM, ringkas) untuk: ${prompt}`,
+        contents: `Tulis satu huraian ringkas dan padat dalam Bahasa Melayu untuk perhimpunan sekolah. Tema: ${prompt}. Fokus kepada nilai murni murid.`,
       });
-      setFormData(prev => ({ ...prev, [field]: response.text || '' }));
-    } catch (error) {
-      console.error(error);
-      alert("AI gagal. Sila taip secara manual.");
+      
+      const generatedText = response.text || '';
+      setFormData(prev => ({ ...prev, [field]: generatedText }));
+    } catch (error: any) {
+      console.error("AI Error:", error);
+      if (error.message === "API_KEY_MISSING") {
+        alert("Kunci API AI belum ditetapkan dalam Vercel Environment Variables. Sila hubungi Admin.");
+      } else {
+        alert("Gagal menjana teks. Sila cuba lagi atau taip secara manual.");
+      }
     } finally {
       setLoading(prev => ({ ...prev, [field]: false }));
     }
@@ -88,12 +101,13 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
   return (
     <div className="max-w-4xl mx-auto pb-20 px-4 animate-super-spring text-left">
       <div className="flex items-center justify-between mb-10">
-        <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-blue-600 font-bold">
+        <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-blue-600 font-bold transition-colors">
           <ArrowLeft size={20} /><span>Kembali</span>
         </button>
         <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">Borang Laporan</h2>
       </div>
-      <div className="glass-card rounded-[3rem] p-8 md:p-12 shadow-2xl space-y-10">
+      
+      <div className="glass-card rounded-[3rem] p-8 md:p-12 shadow-2xl space-y-10 border border-white">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
            <div className="space-y-1">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tarikh</label>
@@ -112,19 +126,35 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
              </select>
            </div>
         </div>
+
         <div className="space-y-6">
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tema Perhimpunan</label>
-            <input name="tema" value={formData.tema} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-bold outline-none" placeholder="Contoh: Disiplin" />
+            <input name="tema" value={formData.tema} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-bold outline-none focus:border-blue-400" placeholder="Contoh: Disiplin Diri" />
           </div>
+          
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huraian</label>
-              <button onClick={() => generateWithAI('huraian', formData.tema)} className="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">AI</button>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Huraian (Gunakan AI untuk membantu)</label>
+              <button 
+                onClick={() => generateWithAI('huraian', formData.tema)} 
+                disabled={loading.huraian}
+                className={`flex items-center space-x-2 text-[10px] font-black text-white px-4 py-2 rounded-xl transition-all shadow-lg ${loading.huraian ? 'bg-slate-400' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-105 active:scale-95 animate-pulse-soft'}`}
+              >
+                {loading.huraian ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                <span>{loading.huraian ? 'MENJANA...' : 'JANA DENGAN AI'}</span>
+              </button>
             </div>
-            <textarea name="huraian" value={formData.huraian} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl min-h-[100px] outline-none" />
+            <textarea 
+              name="huraian" 
+              value={formData.huraian} 
+              onChange={handleInputChange} 
+              placeholder="Klik butang AI di atas untuk menjana huraian secara automatik berdasarkan tema..."
+              className="w-full p-5 bg-white border border-slate-200 rounded-2xl min-h-[120px] outline-none focus:ring-4 focus:ring-blue-50 font-medium leading-relaxed" 
+            />
           </div>
         </div>
+
         <div className="space-y-4">
            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Disediakan Oleh</label>
            <select name="disediakanOleh" value={formData.disediakanOleh} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-bold outline-none">
@@ -132,8 +162,9 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
              {SENARAI_GURU.map(g => <option key={g} value={g}>{g}</option>)}
            </select>
         </div>
-        <button onClick={() => onSave(formData)} className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl">
-          Simpan Laporan
+
+        <button onClick={() => onSave(formData)} className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl transform active:scale-[0.98]">
+          Simpan Laporan Sekarang
         </button>
       </div>
     </div>

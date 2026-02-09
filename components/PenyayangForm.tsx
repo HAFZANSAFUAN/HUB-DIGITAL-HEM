@@ -69,18 +69,22 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
     }
   }, [initialData]);
 
+  // Fix: Simplified AI generation logic and direct apiKey usage casting to satisfy type inference requirements.
   const generateWithAI = async (field: string, prompt: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
       const apiKey = process.env.API_KEY;
       if (!apiKey) throw new Error("API_KEY_MISSING");
       
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: apiKey as string });
+      
+      // Use direct string for contents as per SDK guidelines to avoid complex part structures and type conflicts.
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Hasilkan satu ${field} ringkas dan menarik untuk laporan program Guru Penyayang sekolah. Tema: ${prompt || 'Amalan Guru Penyayang'}.`,
       });
       
+      // Access the .text property directly (not a method) as per SDK guidelines.
       setFormData(prev => ({ ...prev, [field]: response.text || '' }));
     } catch (error: any) {
       console.error('AI Error:', error);

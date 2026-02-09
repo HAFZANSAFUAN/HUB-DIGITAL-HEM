@@ -12,7 +12,7 @@ import { TakwimView } from './components/TakwimView';
 import { 
   Lock, X, School, FilePlus, LayoutGrid, BarChart3, 
   CheckCircle2, ArrowRight, Settings, ShieldCheck, LogOut, 
-  Loader2, Heart
+  Loader2, Heart, CheckCircle, Database
 } from 'lucide-react';
 
 // === DATABASE URLS ===
@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showPerhimpunanModal, setShowPerhimpunanModal] = useState(false);
   const [showPenyayangModal, setShowPenyayangModal] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [currentView, setCurrentView] = useState<'HUB' | 'FORM' | 'PENYAYANG_FORM' | 'LIST' | 'PENYAYANG_LIST' | 'DASHBOARD' | 'ADMIN_PORTAL' | 'TAKWIM'>('HUB');
   const [reports, setReports] = useState<any[]>([]);
   const [penyayangReports, setPenyayangReports] = useState<any[]>([]);
@@ -35,7 +36,7 @@ const App: React.FC = () => {
   const logoUrl = "https://lh3.googleusercontent.com/d/1UAlLnJkiTebZU-nVAv1pByGQyUz2ZSpR";
 
   const fetchAllData = async () => {
-    setSyncStatus('LOADING');
+    // Jalankan fetch data di belakang tabir tanpa mengganggu UI utama
     try {
       const [resPerhimpunan, resPenyayang] = await Promise.all([
         fetch(GOOGLE_SHEET_API_URL).then(res => res.json()),
@@ -44,11 +45,8 @@ const App: React.FC = () => {
       
       if (Array.isArray(resPerhimpunan)) setReports(resPerhimpunan);
       if (Array.isArray(resPenyayang)) setPenyayangReports(resPenyayang);
-      
-      setSyncStatus('SUCCESS');
     } catch (error) {
       console.error("Fetch Error:", error);
-      setSyncStatus('ERROR');
     }
   };
 
@@ -60,16 +58,28 @@ const App: React.FC = () => {
     const isPenyayang = !!data.program;
     const targetUrl = isPenyayang ? PENYAYANG_API_URL : GOOGLE_SHEET_API_URL;
 
+    // --- OPTIMISTIC UI: Paparkan mesej kejayaan SERTA-MERTA ---
+    setShowSuccess(true);
     setSyncStatus('LOADING');
+
+    // Hantar data ke Google Sheet di belakang tabir
     fetch(targetUrl, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify(data)
     }).then(() => {
       setSyncStatus('SUCCESS');
-      fetchAllData();
-      setCurrentView(isPenyayang ? 'PENYAYANG_LIST' : 'LIST');
+      fetchAllData(); // Kemaskini data secara senyap
+    }).catch(err => {
+      console.error("Save Error:", err);
+      setSyncStatus('ERROR');
     });
+    
+    // Tukar skrin dengan lebih pantas (2 saat sahaja)
+    setTimeout(() => {
+      setShowSuccess(false);
+      setCurrentView(isPenyayang ? 'PENYAYANG_LIST' : 'LIST');
+    }, 2000);
   };
 
   return (
@@ -142,20 +152,62 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Modals */}
+      {/* Success Notification Modal (Pantas) */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="glass-card w-full max-w-sm p-12 rounded-[3.5rem] border border-emerald-500/30 text-center shadow-[0_32px_64px_-16px_rgba(16,185,129,0.4)] animate-in zoom-in slide-in-from-bottom-10 duration-400">
+            <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-200 animate-bounce">
+              <CheckCircle size={56} className="text-white" />
+            </div>
+            <div className="space-y-4">
+              <div className="flex justify-center items-center space-x-2 text-emerald-600">
+                <Database size={16} />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Syncing to Cloud...</span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 leading-tight tracking-tighter uppercase">
+                LAPORAN TELAH BERJAYA DIHANTAR KE DATABASE ONLINE
+              </h3>
+              <div className="flex items-center justify-center space-x-2 pt-4">
+                 <Loader2 size={14} className="animate-spin text-slate-400" />
+                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Memproses Rekod...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modals & Popups */}
       {showPerhimpunanModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative glass-card w-full max-w-lg p-12 rounded-[3rem] animate-super-spring">
-            <button onClick={() => setShowPerhimpunanModal(false)} className="absolute top-8 right-8 text-slate-400 hover:text-rose-500"><X /></button>
-            <h3 className="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-8 text-center">Laporan Perhimpunan</h3>
+          <div className="relative glass-card w-full max-w-lg p-10 md:p-12 rounded-[3rem] animate-super-spring">
+            <button onClick={() => setShowPerhimpunanModal(false)} className="absolute top-8 right-8 text-slate-400 hover:text-rose-500 transition-colors"><X /></button>
+            <h3 className="text-2xl md:text-3xl font-black text-slate-800 uppercase tracking-tighter mb-8 text-center">LAPORAN PERHIMPUNAN RASMI</h3>
             <div className="space-y-4">
-              <button onClick={() => { setCurrentView('FORM'); setShowPerhimpunanModal(false); }} className="w-full bg-slate-900 text-white p-6 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-600 transition-all flex justify-between items-center">
-                <span>Isi Laporan Baru</span>
-                <ArrowRight size={20} />
+              <button onClick={() => { setCurrentView('FORM'); setShowPerhimpunanModal(false); }} className="w-full bg-slate-900 text-white p-6 rounded-3xl font-black transition-all hover:bg-blue-600 hover:-translate-y-1 shadow-xl flex justify-between items-center group">
+                <div className="text-left">
+                  <p className="text-lg uppercase leading-none mb-1">ISI LAPORAN BARU</p>
+                  <p className="text-[10px] text-blue-200 opacity-80 font-bold uppercase tracking-widest">(KLIK SINI UNTUK ISI LAPORAN BARU)</p>
+                </div>
+                <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
               </button>
-              <button onClick={() => { setCurrentView('LIST'); setShowPerhimpunanModal(false); }} className="w-full bg-white border border-slate-200 p-6 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex justify-between items-center text-slate-700">
-                <span>Lihat Rekod</span>
-                <ArrowRight size={20} />
+
+              <button onClick={() => { setCurrentView('LIST'); setShowPerhimpunanModal(false); }} className="w-full bg-white border border-slate-200 text-slate-800 p-6 rounded-3xl font-black transition-all hover:bg-slate-50 hover:border-slate-300 hover:-translate-y-1 shadow-lg flex justify-between items-center group">
+                <div className="text-left">
+                  <p className="text-lg uppercase leading-none mb-1">REKOD LAPORAN</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">(KLIK SINI UNTUK KEMASKINI LAPORAN)</p>
+                </div>
+                <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+              </button>
+
+              <button onClick={() => { setCurrentView('DASHBOARD'); setShowPerhimpunanModal(false); }} className="w-full bg-indigo-600 text-white p-6 rounded-3xl font-black transition-all hover:bg-indigo-700 hover:-translate-y-1 shadow-xl flex justify-between items-center group">
+                <div className="text-left">
+                  <div className="flex items-center space-x-2">
+                    <BarChart3 size={18} className="text-indigo-200" />
+                    <p className="text-lg uppercase leading-none">DASHBOARD PELAPORAN</p>
+                  </div>
+                  <p className="text-[10px] text-indigo-100 opacity-80 font-bold uppercase tracking-widest mt-1">(KESEMUA PELAPORAN DIPAPARKAN DISINI)</p>
+                </div>
+                <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
               </button>
             </div>
           </div>

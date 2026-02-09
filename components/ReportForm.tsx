@@ -102,19 +102,17 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     updateDateTime();
   }, [formData.tarikh]);
 
-  // Fix: Optimized AI generation logic and direct apiKey usage casting to satisfy type inference requirements.
-  const generateWithAI = async (field: string, context: string) => {
-    setLoading(prev => ({ ...prev, [field]: true }));
+  // Fix: Use simple string contents to avoid type ambiguity errors with Part and Blob types.
+  const generateWithAI = async (field: keyof Report, context: string) => {
+    setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey) throw new Error("API_KEY_MISSING");
+      // Use process.env.API_KEY directly as per guidelines.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       
-      const ai = new GoogleGenAI({ apiKey: apiKey as string });
+      const prompt = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
-      const prompt = `Tulis satu ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
-      
-      // Use direct string for contents as per SDK guidelines to avoid complex part structures and type conflicts.
-      const response: GenerateContentResponse = await ai.models.generateContent({
+      // Use standard direct string for contents for text generation tasks.
+      const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
       });
@@ -126,7 +124,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
       console.error("AI Error:", error);
       alert("Gagal menjana teks. Sila cuba lagi.");
     } finally {
-      setLoading(prev => ({ ...prev, [field]: false }));
+      setLoading(prev => ({ ...prev, [field as string]: false }));
     }
   };
 

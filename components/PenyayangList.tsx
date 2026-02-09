@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { 
   Calendar, Heart, FileText, Search, Plus, User, ArrowLeft, FileDown, 
-  CheckSquare, XCircle, Download, CheckCircle, MapPin, Users, Edit3
+  CheckSquare, XCircle, Download, CheckCircle, MapPin, Users, Edit3, Share2
 } from 'lucide-react';
 
 interface PenyayangReport {
@@ -46,6 +46,12 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
     return dateOnly;
   };
 
+  const handleShareWhatsApp = (report: PenyayangReport) => {
+    const lokasi = report.tempat === 'LAIN-LAIN (SILA NYATAKAN)' ? report.tempatLain : report.tempat;
+    const text = `*LAPORAN GURU PENYAYANG SKMPJ*%0A%0A*Tarikh:* ${formatDate(report.tarikh)} (${report.hari})%0A*Lokasi:* ${lokasi}%0A*Sasaran:* ${report.sasaran}%0A*Disediakan Oleh:* ${report.disediakanOleh}%0A%0A_Laporan dijana secara digital melalui Digital Hub HEM._`;
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
   const generateReportBodyHTML = (report: PenyayangReport) => {
     const logoSekolah = "https://lh3.googleusercontent.com/d/1UAlLnJkiTebZU-nVAv1pByGQyUz2ZSpR";
     const logoTS25 = "https://blogger.googleusercontent.com/img/a/AVvXsEi8KyegQEb-lGll1QFpHT9LMNagd2WurlH85-jtG2lq3qWJqd-W6ZvEkktV31KBMpX-H59_a5GaTaMPu8trWPQtlMNoDZRmkzALLy_eSp3DvkP-0bZd7pWBCHWxyPJLAp0MqwQ2HyhJXGHOj73ZCeW24z5FIfcZIL7MqMqhii1Jp3kvTrV_DtYNsLj7=s320";
@@ -61,132 +67,53 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
 
     return `
       <div class="opr-page">
-        <!-- Header OPR -->
         <div class="opr-header">
           <img src="${logoSekolah}" class="logo-left" />
           <img src="${logoTS25}" class="logo-right" />
           <div class="header-text">
-            <h2>LAPORAN OPR LAPORAN GURU PENYAYANG SK METHODIST PJ</h2>
+            <h2>LAPORAN OPR GURU PENYAYANG SK METHODIST PJ</h2>
             <h3>UNIT HAL EHWAL MURID (HEM)</h3>
           </div>
         </div>
-
-        <!-- Jadual Maklumat -->
         <table class="opr-table">
-          <tr>
-            <td class="label-cell">PROGRAM / AKTIVITI</td>
-            <td colspan="3" class="value-cell"><strong>${report.program.toUpperCase()}</strong></td>
-          </tr>
-          <tr>
-            <td class="label-cell">TARIKH</td>
-            <td class="value-cell">${displayDate}</td>
-            <td class="label-cell">HARI</td>
-            <td class="value-cell">${report.hari.toUpperCase()}</td>
-          </tr>
-          <tr>
-            <td class="label-cell">LOKASI</td>
-            <td class="value-cell">${lokasi.toUpperCase()}</td>
-            <td class="label-cell">SASARAN</td>
-            <td class="value-cell">${report.sasaran.toUpperCase()}</td>
-          </tr>
+          <tr><td class="label-cell">PROGRAM</td><td colspan="3" class="value-cell"><strong>${report.program.toUpperCase()}</strong></td></tr>
+          <tr><td class="label-cell">TARIKH</td><td class="value-cell">${displayDate}</td><td class="label-cell">HARI</td><td class="value-cell">${report.hari.toUpperCase()}</td></tr>
+          <tr><td class="label-cell">LOKASI</td><td class="value-cell">${lokasi.toUpperCase()}</td><td class="label-cell">SASARAN</td><td class="value-cell">${report.sasaran.toUpperCase()}</td></tr>
         </table>
-
-        <!-- Kandungan Utama -->
-        <div class="opr-section">
-          <div class="section-title">OBJEKTIF PROGRAM</div>
-          <div class="section-body">${report.objektif || 'Tiada maklumat.'}</div>
-        </div>
-
-        <div class="opr-section">
-          <div class="section-title">LAPORAN AKTIVITI / RINGKASAN PROGRAM</div>
-          <div class="section-body">${report.aktiviti || 'Tiada maklumat.'}</div>
-        </div>
-
-        <!-- Lensa Bergambar -->
-        <div class="opr-section">
-          <div class="section-title">LENSA BERGAMBAR (EVIDENCE)</div>
-          <div class="section-body" style="padding: 10px; display: flex; justify-content: center;">
-            ${imageGridHtml}
-          </div>
-        </div>
-
-        <!-- Footer / Pengesahan -->
+        <div class="opr-section"><div class="section-title">OBJEKTIF PROGRAM</div><div class="section-body">${report.objektif || 'Tiada maklumat.'}</div></div>
+        <div class="opr-section"><div class="section-title">RINGKASAN AKTIVITI</div><div class="section-body">${report.aktiviti || 'Tiada maklumat.'}</div></div>
+        <div class="opr-section"><div class="section-title">LENSA BERGAMBAR</div><div class="section-body" style="padding:10px; display:flex; justify-content:center;">${imageGridHtml}</div></div>
         <div class="opr-footer">
-          <div class="signature-box">
-            <p>Disediakan oleh:</p>
-            <div class="sig-line"></div>
-            <p><strong>${report.disediakanOleh.toUpperCase()}</strong></p>
-            <p>Guru Bertugas</p>
-          </div>
-          <div class="signature-box">
-            <p>Disemak oleh:</p>
-            <div class="sig-line"></div>
-            <p><strong>PN RITA SELVAMALAR</strong></p>
-            <p>Penyelaras Guru Penyayang</p>
-          </div>
-          <div class="signature-box">
-            <p>Disahkan oleh:</p>
-            <div class="sig-line"></div>
-            <p><strong>PENTADBIR SEKOLAH</strong></p>
-            <p>SK Methodist PJ</p>
-          </div>
+          <div class="signature-box"><p>Disediakan oleh:</p><div class="sig-line"></div><p><strong>${report.disediakanOleh.toUpperCase()}</strong></p></div>
+          <div class="signature-box"><p>Disemak oleh:</p><div class="sig-line"></div><p><strong>PENYELARAS HEM</strong></p></div>
+          <div class="signature-box"><p>Disahkan oleh:</p><div class="sig-line"></div><p><strong>PENTADBIR</strong></p></div>
         </div>
       </div>
     `;
   };
 
   const wrapWithFullHTML = (content: string) => `
-    <!DOCTYPE html>
-    <html lang="ms">
-    <head>
-      <meta charset="UTF-8">
-      <title>OPR Guru Penyayang SKMPJ</title>
-      <style>
-        @page { size: A4; margin: 1cm; }
-        body { font-family: 'Arial', sans-serif; color: #000; line-height: 1.2; font-size: 10pt; margin: 0; padding: 0; }
-        .opr-page { border: 2px solid #000; padding: 20px; box-sizing: border-box; min-height: 27.7cm; position: relative; }
-        
-        .opr-header { display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 15px; }
-        .logo-left { position: absolute; left: 0; top: 0; width: 65px; height: auto; }
-        .logo-right { position: absolute; right: 0; top: 0; width: 85px; height: auto; }
-        .header-text { text-align: center; width: 80%; margin: 0 auto; }
-        .header-text h2 { margin: 0; font-size: 14pt; font-weight: bold; text-transform: uppercase; }
-        .header-text h3 { margin: 5px 0 0 0; font-size: 11pt; font-weight: normal; }
-
-        .opr-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        .opr-table td { border: 1px solid #000; padding: 8px; vertical-align: top; }
-        .label-cell { background-color: #f2f2f2; font-weight: bold; width: 150px; text-transform: uppercase; font-size: 9pt; }
-        .value-cell { font-size: 10pt; }
-
-        .opr-section { border: 1px solid #000; margin-bottom: 10px; }
-        .section-title { background-color: #e6e6e6; padding: 5px 10px; font-weight: bold; border-bottom: 1px solid #000; text-transform: uppercase; font-size: 9pt; }
-        .section-body { padding: 10px; min-height: 50px; white-space: pre-wrap; font-size: 10pt; }
-
-        .opr-image-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; width: 100%; }
-        /* Saiz Diubah kepada 8cm Lebar x 10cm Tinggi */
-        .opr-photo { border: 1px solid #000; width: 8cm; height: 10cm; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #f9f9f9; }
-        .opr-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .no-image { text-align: center; color: #999; padding: 30px; font-style: italic; border: 1px dashed #ccc; width: 100%; }
-
-        .opr-footer { display: flex; justify-content: space-between; margin-top: 30px; }
-        .signature-box { width: 30%; text-align: center; font-size: 9pt; }
-        .sig-line { border-top: 1px solid #000; margin: 40px auto 5px auto; width: 80%; }
-        
-        @media print {
-          .opr-page { border: none; padding: 0; }
-          body { -webkit-print-color-adjust: exact; }
-        }
-      </style>
-    </head>
-    <body>
-      ${content}
-      <script>
-        window.onload = function() {
-          setTimeout(() => { window.print(); }, 1000);
-        };
-      </script>
-    </body>
-    </html>
+    <!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      @page { size: A4; margin: 1cm; }
+      body { font-family: 'Arial', sans-serif; line-height: 1.2; font-size: 10pt; }
+      .opr-page { border: 2px solid #000; padding: 20px; min-height: 27.7cm; }
+      .opr-header { display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 15px; }
+      .logo-left { position: absolute; left: 0; top: 0; width: 65px; }
+      .logo-right { position: absolute; right: 0; top: 0; width: 85px; }
+      .header-text { text-align: center; }
+      .opr-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+      .opr-table td { border: 1px solid #000; padding: 8px; }
+      .label-cell { background-color: #f2f2f2; font-weight: bold; width: 150px; }
+      .opr-section { border: 1px solid #000; margin-bottom: 10px; }
+      .section-title { background-color: #e6e6e6; padding: 5px 10px; font-weight: bold; border-bottom: 1px solid #000; }
+      .section-body { padding: 10px; min-height: 50px; white-space: pre-wrap; }
+      .opr-image-container { display: flex; justify-content: center; gap: 20px; }
+      .opr-photo { border: 1px solid #000; width: 8cm; height: 10cm; overflow: hidden; }
+      .opr-photo img { width: 100%; height: 100%; object-fit: cover; }
+      .opr-footer { display: flex; justify-content: space-between; margin-top: 30px; }
+      .signature-box { width: 30%; text-align: center; }
+      .sig-line { border-top: 1px solid #000; margin-top: 40px; }
+    </style></head><body>${content}<script>window.onload=function(){setTimeout(()=>{window.print();},1000);};</script></body></html>
   `;
 
   const handleDownloadPDF = (report: PenyayangReport) => {
@@ -196,6 +123,7 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
     printWindow.document.close();
   };
 
+  // Fix: Added handleBulkDownload to allow multi-report PDF generation
   const handleBulkDownload = () => {
     if (selectedIds.size === 0) return;
     const combinedContent = reports.filter(r => selectedIds.has(r.id)).map(r => generateReportBodyHTML(r)).join('');
@@ -207,10 +135,9 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
 
   return (
     <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700 px-4">
-      
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-50">
         <button onClick={onBack} className="flex items-center space-x-3 text-slate-500 hover:text-rose-600 font-bold text-sm group">
-          <div className="p-3 rounded-2xl bg-white shadow-md border border-slate-100 group-hover:bg-rose-600 group-hover:text-white group-hover:scale-110 transition-all">
+          <div className="p-3 rounded-2xl bg-white shadow-md border border-slate-100 group-hover:bg-rose-500 group-hover:text-white group-hover:scale-110 transition-all">
             <ArrowLeft size={20} />
           </div>
           <div className="flex flex-col items-start text-left">
@@ -265,7 +192,6 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
                 className={`glass-card rounded-[2.5rem] p-8 border transition-all duration-300 relative overflow-hidden ${isBulkMode ? 'cursor-pointer' : ''} ${isSelected ? 'border-rose-500 bg-rose-50/20 ring-4 ring-rose-100 shadow-xl' : 'border-white/60 hover:shadow-2xl'}`}
               >
                 <div className="absolute left-0 top-0 w-2 h-full bg-rose-500"></div>
-                
                 <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 ${isBulkMode ? 'pl-10' : ''}`}>
                   <div className="flex items-start space-x-6">
                     <div className="w-20 h-20 bg-rose-500 rounded-2xl flex flex-col items-center justify-center text-white shadow-xl flex-shrink-0">
@@ -290,10 +216,17 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
 
                   {!isBulkMode && (
                     <div className="flex items-center space-x-3">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleShareWhatsApp(report); }}
+                        className="p-4 bg-emerald-500 text-white rounded-xl shadow-lg hover:bg-emerald-600 transition-all active:scale-95"
+                        title="Kongsi WhatsApp"
+                      >
+                        <Share2 size={18} />
+                      </button>
                       {isAdmin && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleDownloadPDF(report); }} 
-                          className="p-4 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all active:scale-95"
+                          className="p-4 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-all active:scale-95"
                           title="Muat Turun PDF (OPR)"
                         >
                           <FileDown size={18} />
@@ -304,7 +237,7 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
                         className="flex items-center space-x-3 px-6 py-4 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-rose-600 transition-all transform active:scale-95"
                       >
                         <Edit3 size={16} />
-                        <span>Kemaskini</span>
+                        <span>Edit</span>
                       </button>
                     </div>
                   )}
@@ -327,7 +260,7 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
         <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] w-full max-w-lg px-6">
           <button onClick={handleBulkDownload} className="w-full bg-rose-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-3xl hover:bg-rose-700 transition-all flex items-center justify-center space-x-4 animate-super-spring">
             <Download size={20} />
-            <span>Muat Turun {selectedIds.size} Laporan Terpilih (PDF)</span>
+            <span>Muat Turun {selectedIds.size} Laporan (PDF)</span>
           </button>
         </div>
       )}

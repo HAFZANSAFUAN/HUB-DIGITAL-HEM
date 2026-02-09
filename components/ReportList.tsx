@@ -36,11 +36,11 @@ export const ReportList: React.FC<ReportListProps> = ({ reports, onBack, onEdit,
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Penapisan laporan berdasarkan carian
+  // Penapisan laporan berdasarkan carian dengan semakan keselamatan
   const filteredReports = reports.filter(r => 
-    r.tema.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.minggu.toString().includes(searchQuery) ||
-    r.disediakanOleh.toLowerCase().includes(searchQuery.toLowerCase())
+    (r.tema || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (r.minggu || '').toString().includes(searchQuery) ||
+    (r.disediakanOleh || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatDate = (dateStr: string) => {

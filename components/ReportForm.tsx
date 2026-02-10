@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
-// Memberitahu TypeScript supaya tidak ralat dengan process.env di Vercel
-declare const process: any;
+// Menggunakan casting any untuk process.env bagi mengelakkan ralat TS semasa build di Vercel
+// Removed manual ENV definition as per guidelines
 
 interface Report {
   id: string;
@@ -106,16 +106,18 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     updateDateTime();
   }, [formData.tarikh]);
 
-  // Fix: Correctly initialize GoogleGenAI and call generateContent as per guidelines
   const generateWithAI = async (field: keyof Report, context: string) => {
     setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Create a new GoogleGenAI instance right before making an API call 
+      // using process.env.API_KEY directly as per guidelines.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       const promptText = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
+      // Fix: Use an explicit parts object for contents to resolve typing conflicts with global Blob types
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: promptText,
+        contents: { parts: [{ text: promptText }] },
       });
       
       const generatedText = response.text || '';
@@ -266,7 +268,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Ucapan Guru (Minggu Ini - AI)</label>
-              <button onClick={() => generateWithAI('ucapanGuruIni', 'Pesanan disiplin and motivasi untuk murid-murid minggu ini')} disabled={loading.ucapanGuruIni} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-600 transition-all">
+              <button onClick={() => generateWithAI('ucapanGuruIni', 'Pesanan disiplin and motivasi untuk murid-murid minggu ini')} disabled={loading.ucapanGuruIni} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-100 text-blue-600 transition-all">
                 {loading.ucapanGuruIni ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               </button>
             </div>

@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
-// Memberitahu TypeScript supaya tidak ralat dengan process.env di Vercel
-declare const process: any;
+// Menggunakan casting any untuk process.env bagi mengelakkan ralat TS semasa build di Vercel
+// Removed manual ENV definition as per guidelines
 
 interface PenyayangReport {
   id: string;
@@ -83,16 +83,18 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
     }
   }, [formData.tarikh]);
 
-  // Fix: Correctly initialize GoogleGenAI and call generateContent as per guidelines
   const generateWithAI = async (field: string, promptText: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Create a new GoogleGenAI instance right before making an API call 
+      // using process.env.API_KEY directly as per guidelines.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       const promptValue = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
       
+      // Fix: Use an explicit parts object for contents to resolve typing conflicts with global Blob types
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: promptValue,
+        contents: { parts: [{ text: promptValue }] },
       });
       const generatedText = response.text || '';
       setFormData(prev => ({ ...prev, [field]: generatedText }));

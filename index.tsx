@@ -3,6 +3,18 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
+// Pengisytiharan global untuk process.env supaya TypeScript tidak ralat semasa build
+declare global {
+  interface Window {
+    process: {
+      env: {
+        API_KEY: string;
+        [key: string]: string;
+      };
+    };
+  }
+}
+
 const startApp = () => {
   const rootElement = document.getElementById('root');
   if (rootElement) {

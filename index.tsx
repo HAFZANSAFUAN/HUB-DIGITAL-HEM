@@ -3,6 +3,14 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
+// Isytihar process.env untuk TypeScript build
+declare var process: {
+  env: {
+    API_KEY: string;
+    [key: string]: string;
+  };
+};
+
 const startApp = () => {
   const rootElement = document.getElementById('root');
   if (rootElement) {
@@ -18,7 +26,7 @@ const startApp = () => {
     if (loader) {
       loader.style.opacity = '0';
       setTimeout(() => {
-        loader.style.display = 'none';
+        if (loader) loader.style.display = 'none';
       }, 500);
     }
   }

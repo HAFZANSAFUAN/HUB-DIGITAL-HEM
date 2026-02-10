@@ -7,6 +7,14 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
+// Declare process.env to ensure TypeScript recognizes it in this module
+declare var process: {
+  env: {
+    API_KEY: string;
+    [key: string]: string;
+  };
+};
+
 interface PenyayangReport {
   id: string;
   program: string;
@@ -78,18 +86,16 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
     }
   }, [initialData]);
 
-  // Generate content using Gemini API
   const generateWithAI = async (field: string, promptText: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
-      // Use process.env.API_KEY directly as per guidelines
+      // Create a new instance with the API key from environment
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
+      const promptValue = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
       
-      // Fix: Use explicit content parts structure to resolve Type unknown/Blob inference errors
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: promptValue }] }],
       });
       setFormData(prev => ({ ...prev, [field]: response.text || '' }));
     } catch (error: any) {
@@ -141,7 +147,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
       </div>
 
       <div className="glass-card rounded-[3.5rem] p-8 md:p-14 shadow-2xl border border-white space-y-12">
-        {/* Nama Program */}
         <section className="space-y-4">
           <div className="flex items-center space-x-3 border-b border-rose-100 pb-4">
             <div className="p-2 bg-rose-500 rounded-lg text-white"><Heart size={18} fill="currentColor" /></div>
@@ -152,7 +157,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           </div>
         </section>
 
-        {/* Tarikh & Hari */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tarikh Program</label>
@@ -167,7 +171,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           </div>
         </section>
 
-        {/* TEMPAT & SASARAN */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
           <div className="space-y-3">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
@@ -202,7 +205,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           </div>
         </section>
         
-        {/* Objektif Program */}
         <section className="space-y-4 pt-4 border-t border-slate-50">
           <div className="flex justify-between items-center">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objektif Program</label>
@@ -217,7 +219,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           <textarea name="objektif" value={formData.objektif} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl p-5 font-medium text-slate-700 min-h-[100px] outline-none focus:ring-4 focus:ring-rose-50" placeholder="Terangkan objektif program..." />
         </section>
 
-        {/* Ringkasan Aktiviti */}
         <section className="space-y-4 pt-4 border-t border-slate-50">
           <div className="flex justify-between items-center">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ringkasan Aktiviti</label>
@@ -232,7 +233,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           <textarea name="aktiviti" value={formData.aktiviti} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl p-5 font-medium text-slate-700 min-h-[120px] outline-none focus:ring-4 focus:ring-rose-50" placeholder="Terangkan ringkasan aktiviti yang dijalankan..." />
         </section>
 
-        {/* Lensa Bergambar */}
         <section className="space-y-4 pt-4 border-t border-slate-50">
            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
              <Camera size={12} className="mr-2"/> Lensa Bergambar (Maksimum 2 Keping)
@@ -256,7 +256,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
            </div>
         </section>
 
-        {/* Disediakan Oleh */}
         <section className="space-y-4 pt-4 border-t border-slate-50">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Disediakan Oleh</label>
           <select name="disediakanOleh" value={formData.disediakanOleh} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl py-5 px-6 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-50">

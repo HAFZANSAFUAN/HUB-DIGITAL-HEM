@@ -7,6 +7,14 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
+// Declare process.env to ensure TypeScript recognizes it in this module
+declare var process: {
+  env: {
+    API_KEY: string;
+    [key: string]: string;
+  };
+};
+
 interface Report {
   id: string;
   tarikh: string;
@@ -85,7 +93,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     disediakanOleh: initialData?.disediakanOleh || ''
   });
 
-  // Auto-logic for Day and Time
   useEffect(() => {
     const updateDateTime = () => {
       const now = new Date();
@@ -102,24 +109,19 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     updateDateTime();
   }, [formData.tarikh]);
 
-  // Generate content using Gemini API
   const generateWithAI = async (field: keyof Report, context: string) => {
     setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
-      // Initialize GoogleGenAI instance with apiKey directly from process.env
+      // Always initialize with apiKey from process.env.API_KEY
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const promptText = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
-      const prompt = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
-      
-      // Fix: Use explicit content parts structure to resolve Type unknown/Blob inference errors
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: promptText }] }],
       });
       
-      // Accessing .text property directly (not a method).
       const generatedText = response.text || '';
-      // Ensure we only update string fields to prevent type mismatch with string array fields like 'images'.
       if (typeof (formData as any)[field] === 'string') {
         setFormData(prev => ({ ...prev, [field]: generatedText }));
       }
@@ -162,7 +164,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
       return;
     }
     setIsSaving(true);
-    // Beri sedikit masa untuk animasi loading butang dipaparkan sebelum overlay
     setTimeout(() => {
       onSave(formData);
     }, 100);
@@ -181,7 +182,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
       </div>
       
       <div className="glass-card rounded-[3rem] p-8 md:p-12 shadow-2xl space-y-10 border border-white relative overflow-hidden">
-        {/* Row 1: Tarikh, Hari, Minggu, Masa */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
            <div className="space-y-2">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><Calendar size={12} className="mr-2"/> Tarikh</label>
@@ -209,7 +209,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
            </div>
         </div>
 
-        {/* Row 2: Tempat & Kumpulan Guru */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
            <div className="space-y-2">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><MapPin size={12} className="mr-2"/> Tempat</label>
@@ -229,7 +228,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
            </div>
         </div>
 
-        {/* Auto-display Teachers List */}
         <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 text-left shadow-xl animate-in fade-in duration-500">
            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3">Ahli Kumpulan {formData.kumpulan}:</p>
            <p className="text-xs font-black text-white leading-relaxed uppercase tracking-tight">
@@ -237,7 +235,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
            </p>
         </div>
 
-        {/* Bahagian Tema & AI */}
         <div className="space-y-6 pt-4 border-t border-slate-100">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">1. Tema Perhimpunan</label>
@@ -256,7 +253,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
           </div>
         </div>
 
-        {/* Ucapan Guru Bertugas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-100">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -278,7 +274,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
           </div>
         </div>
 
-        {/* Bahagian Pentadbir */}
         <div className="space-y-6 pt-4 border-t border-slate-100">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -300,7 +295,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
            <textarea name="ucapanPentadbir" value={formData.ucapanPentadbir} onChange={handleInputChange} className="w-full p-5 bg-white border border-slate-200 rounded-2xl min-h-[100px] text-sm outline-none font-medium" />
         </div>
 
-        {/* Lensa Perhimpunan */}
         <div className="space-y-4 pt-4 border-t border-slate-100">
            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><ImageIcon size={12} className="mr-2"/> Lensa Perhimpunan (Maksimum 2 Keping)</label>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -320,7 +314,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
            </div>
         </div>
 
-        {/* Disediakan Oleh */}
         <div className="space-y-4 pt-4 border-t border-slate-100">
            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><User size={12} className="mr-2"/> Disediakan Oleh:</label>
            <select name="disediakanOleh" value={formData.disediakanOleh} onChange={handleInputChange} className="w-full p-5 bg-white border border-slate-200 rounded-2xl font-bold outline-none text-sm focus:ring-4 focus:ring-blue-100">

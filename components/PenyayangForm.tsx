@@ -1,19 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, Clock, MapPin, Users, Heart, 
-  MessageSquare, Camera, ChevronLeft, Sparkles, 
-  Loader2, UserCheck, Trash2, Upload, Save, User, ArrowLeft, Home, Book, Image as ImageIcon
+  Calendar, MapPin, Users, Heart, 
+  Camera, Sparkles, 
+  Loader2, Trash2, Upload, Save, ArrowLeft
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
-
-// Declare process.env to ensure TypeScript recognizes it in this module
-declare var process: {
-  env: {
-    API_KEY: string;
-    [key: string]: string;
-  };
-};
 
 interface PenyayangReport {
   id: string;
@@ -50,8 +42,6 @@ const SENARAI_GURU = [
   "MOHAMMAD AKIF BIN JAMAWI"
 ].sort();
 
-const HARI_LIST = ['ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT'];
-
 const TEMPAT_LIST = [
   "DEWAN SEMARAK ILMU",
   "KANTIN",
@@ -79,7 +69,6 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
   });
 
   useEffect(() => {
-    // Kemaskini hari berdasarkan tarikh
     const days = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
     const parts = formData.tarikh.split('-');
     if (parts.length === 3) {
@@ -94,15 +83,16 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
   const generateWithAI = async (field: string, promptText: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
-      // Create a new instance with the API key from environment
+      // Corrected initialization using process.env.API_KEY directly as per SDK guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptValue = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
       
-      // Fix: Simplified contents parameter to promptValue string to resolve TypeScript type errors with complex parts structure and Blob ambiguity
+      // Removed 'as any' and using standard string format for contents to avoid type confusion with Blob
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: promptValue,
       });
+      // Access text directly from response object (response.text) as per guidelines
       setFormData(prev => ({ ...prev, [field]: response.text || '' }));
     } catch (error: any) {
       console.error('AI Error:', error);

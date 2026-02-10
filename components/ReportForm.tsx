@@ -1,19 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, Clock, MapPin, Users, BookOpen, 
+  Calendar, Clock, MapPin, Users, 
   Sparkles, Loader2, Upload, Save, User, ArrowLeft, 
-  Image as ImageIcon, X, Trash2
+  Image as ImageIcon, Trash2
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
-
-// Declare process.env to ensure TypeScript recognizes it in this module
-declare var process: {
-  env: {
-    API_KEY: string;
-    [key: string]: string;
-  };
-};
 
 interface Report {
   id: string;
@@ -97,8 +89,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     const updateDateTime = () => {
       const now = new Date();
       const days = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
-      
-      // Fix: Guna split untuk elak ralat Timezone UTC di Vercel
       const parts = formData.tarikh.split('-');
       if (parts.length === 3) {
         const y = parseInt(parts[0]);
@@ -106,14 +96,8 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
         const d = parseInt(parts[2]);
         const dateObj = new Date(y, m, d);
         const dayName = days[dateObj.getDay()];
-        
         const timeStr = now.toLocaleTimeString('ms-MY', { hour12: false, hour: '2-digit', minute: '2-digit' });
-        
-        setFormData(prev => ({ 
-          ...prev, 
-          hari: dayName, 
-          masa: prev.masa || timeStr 
-        }));
+        setFormData(prev => ({ ...prev, hari: dayName, masa: prev.masa || timeStr }));
       }
     };
     updateDateTime();
@@ -122,15 +106,17 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
   const generateWithAI = async (field: keyof Report, context: string) => {
     setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
+      // Corrected initialization using process.env.API_KEY directly as per SDK guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
-      // Fix: Simplified contents parameter to promptText string to resolve TypeScript type errors with complex parts structure and Blob ambiguity
+      // Removed 'as any' and using standard string format for contents to avoid type confusion with Blob
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: promptText,
       });
       
+      // Access text directly from response object (response.text) as per guidelines
       const generatedText = response.text || '';
       if (typeof (formData as any)[field] === 'string') {
         setFormData(prev => ({ ...prev, [field]: generatedText }));

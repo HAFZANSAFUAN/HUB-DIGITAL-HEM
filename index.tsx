@@ -3,13 +3,15 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
-// Isytihar process.env untuk TypeScript build
-declare var process: {
-  env: {
-    API_KEY: string;
-    [key: string]: string;
-  };
-};
+// Isytihar process.env dengan cara yang lebih selamat untuk fasa build
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      API_KEY: string;
+      [key: string]: string | undefined;
+    }
+  }
+}
 
 const startApp = () => {
   const rootElement = document.getElementById('root');

@@ -97,14 +97,24 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     const updateDateTime = () => {
       const now = new Date();
       const days = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
-      const dayName = days[new Date(formData.tarikh).getDay()];
-      const timeStr = now.toLocaleTimeString('ms-MY', { hour12: false, hour: '2-digit', minute: '2-digit' });
       
-      setFormData(prev => ({ 
-        ...prev, 
-        hari: dayName, 
-        masa: prev.masa || timeStr 
-      }));
+      // Fix: Guna split untuk elak ralat Timezone UTC di Vercel
+      const parts = formData.tarikh.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0]);
+        const m = parseInt(parts[1]) - 1;
+        const d = parseInt(parts[2]);
+        const dateObj = new Date(y, m, d);
+        const dayName = days[dateObj.getDay()];
+        
+        const timeStr = now.toLocaleTimeString('ms-MY', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          hari: dayName, 
+          masa: prev.masa || timeStr 
+        }));
+      }
     };
     updateDateTime();
   }, [formData.tarikh]);
@@ -112,13 +122,13 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
   const generateWithAI = async (field: keyof Report, context: string) => {
     setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
-      // Always initialize with apiKey from process.env.API_KEY
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
+      // Fix: Simplified contents parameter to promptText string to resolve TypeScript type errors with complex parts structure and Blob ambiguity
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [{ parts: [{ text: promptText }] }],
+        contents: promptText,
       });
       
       const generatedText = response.text || '';

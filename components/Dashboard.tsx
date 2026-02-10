@@ -34,40 +34,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ reports, onBack }) => {
   
   /**
    * LOGIK PENGIRAAN MINGGU AKADEMIK 2026
-   * Berdasarkan Kalendar Rasmi 2026 (M1 bermula 12 Jan 2026)
+   * Penyelarasan tarikh dilakukan secara manual untuk mengelak ralat zon masa.
    */
   const currentAcademicWeek = useMemo(() => {
-    const startDate = new Date('2026-01-12T00:00:00');
+    // M1 bermula 12 Jan 2026 local time
+    const startDate = new Date(2026, 0, 12); 
     
-    // Simulasi tarikh sekarang sebagai tahun 2026 untuk ketepatan paparan
     const now = new Date();
     const simulatedNow = new Date(now);
     simulatedNow.setFullYear(2026); 
     
     if (simulatedNow < startDate) return 1;
     
-    // Kira beza minggu mentah
+    // Kira beza minggu
     const diffInMs = simulatedNow.getTime() - startDate.getTime();
     const rawWeeks = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 7)) + 1;
     
-    /**
-     * PENYELARASAN CUTI SEKOLAH (MELANGKAU MINGGU AKADEMIK)
-     * 1. Cuti Penggal 1: 21-29 Mac (1 minggu)
-     * 2. Cuti Pertengahan Tahun: 23 Mei - 07 Jun (2 minggu)
-     * 3. Cuti Penggal 2: 29 Ogos - 06 Sept (1 minggu)
-     */
     let weekAdjustment = 0;
     
-    // Selepas Cuti Mac
-    if (simulatedNow > new Date('2026-03-29T23:59:59')) {
+    // Selepas Cuti Mac (21-29 Mac)
+    if (simulatedNow > new Date(2026, 2, 29, 23, 59, 59)) {
       weekAdjustment += 1;
     }
-    // Selepas Cuti Jun
-    if (simulatedNow > new Date('2026-06-07T23:59:59')) {
+    // Selepas Cuti Jun (23 Mei - 07 Jun)
+    if (simulatedNow > new Date(2026, 5, 7, 23, 59, 59)) {
       weekAdjustment += 2;
     }
-    // Selepas Cuti Sept
-    if (simulatedNow > new Date('2026-09-06T23:59:59')) {
+    // Selepas Cuti Sept (29 Ogos - 06 Sept)
+    if (simulatedNow > new Date(2026, 8, 6, 23, 59, 59)) {
       weekAdjustment += 1;
     }
     
@@ -105,8 +99,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ reports, onBack }) => {
 
   return (
     <div className="max-w-7xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-10 duration-700 px-4 md:px-0">
-      
-      {/* Header Visual */}
       <div className="relative z-[60] flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div className="space-y-4">
           <button 
@@ -134,7 +126,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ reports, onBack }) => {
           </div>
         </div>
 
-        {/* Paparan Visual Minggu Semasa */}
         <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md p-2 rounded-[2.5rem] border border-white shadow-xl">
            <div className="px-8 py-4 bg-slate-900 rounded-3xl text-white flex items-center space-x-5 shadow-2xl shadow-slate-200">
              <div className="p-2.5 bg-blue-600 rounded-xl animate-bounce">
@@ -148,7 +139,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ reports, onBack }) => {
         </div>
       </div>
 
-      {/* Grid Kad Ringkasan */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         <div className="glass-card rounded-[2.5rem] p-8 border border-white/60 shadow-xl relative overflow-hidden group">
           <div className="absolute -right-6 -bottom-6 p-6 text-blue-600/5 group-hover:scale-110 transition-transform duration-700">
@@ -260,7 +250,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ reports, onBack }) => {
                 </div>
               </div>
 
-              {/* Grid 43 Minggu */}
               <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-4">
                 {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(week => {
                   const filled = isWeekFilled(week);

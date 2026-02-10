@@ -79,12 +79,17 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
   });
 
   useEffect(() => {
-    if (!initialData) {
-      const today = new Date();
-      const days = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
-      setFormData(prev => ({ ...prev, hari: days[today.getDay()] }));
+    // Kemaskini hari berdasarkan tarikh
+    const days = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
+    const parts = formData.tarikh.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0]);
+      const m = parseInt(parts[1]) - 1;
+      const d = parseInt(parts[2]);
+      const dateObj = new Date(y, m, d);
+      setFormData(prev => ({ ...prev, hari: days[dateObj.getDay()] }));
     }
-  }, [initialData]);
+  }, [formData.tarikh]);
 
   const generateWithAI = async (field: string, promptText: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
@@ -93,9 +98,10 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptValue = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
       
+      // Fix: Simplified contents parameter to promptValue string to resolve TypeScript type errors with complex parts structure and Blob ambiguity
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [{ parts: [{ text: promptValue }] }],
+        contents: promptValue,
       });
       setFormData(prev => ({ ...prev, [field]: response.text || '' }));
     } catch (error: any) {
@@ -164,10 +170,7 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           </div>
           <div className="space-y-3">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hari</label>
-            <select name="hari" value={formData.hari} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 font-bold text-slate-700 outline-none">
-              <option value="">-- Pilih Hari --</option>
-              {HARI_LIST.map(h => <option key={h} value={h}>{h}</option>)}
-            </select>
+            <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 font-bold text-slate-600 outline-none uppercase">{formData.hari}</div>
           </div>
         </section>
 

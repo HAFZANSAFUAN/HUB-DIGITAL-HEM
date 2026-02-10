@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Calendar, Clock, MapPin, Users, Heart, 
   MessageSquare, Camera, ChevronLeft, Sparkles, 
-  Loader2, UserCheck, Trash2, Upload, Save, User, ArrowLeft, Home, Book
+  Loader2, UserCheck, Trash2, Upload, Save, User, ArrowLeft, Home, Book, Image as ImageIcon
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
@@ -44,6 +44,15 @@ const SENARAI_GURU = [
 
 const HARI_LIST = ['ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT'];
 
+const TEMPAT_LIST = [
+  "DEWAN SEMARAK ILMU",
+  "KANTIN",
+  "KELAS",
+  "BILIK KAUNSELING",
+  "PINTU PAGAR UTAMA SEKOLAH",
+  "LAIN-LAIN"
+];
+
 export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, initialData }) => {
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
   
@@ -69,38 +78,51 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
     }
   }, [initialData]);
 
-  // Fix: Simplified AI generation logic and direct apiKey usage casting to satisfy type inference requirements.
-  const generateWithAI = async (field: string, prompt: string) => {
+  // Generate content using Gemini API
+  const generateWithAI = async (field: string, promptText: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey) throw new Error("API_KEY_MISSING");
+      // Use process.env.API_KEY directly as per guidelines
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const prompt = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
       
-      const ai = new GoogleGenAI({ apiKey: apiKey as string });
-      
-      // Use direct string for contents as per SDK guidelines to avoid complex part structures and type conflicts.
+      // Fix: Use explicit content parts structure to resolve Type unknown/Blob inference errors
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Hasilkan satu ${field} ringkas dan menarik untuk laporan program Guru Penyayang sekolah. Tema: ${prompt || 'Amalan Guru Penyayang'}.`,
+        contents: [{ parts: [{ text: prompt }] }],
       });
-      
-      // Access the .text property directly (not a method) as per SDK guidelines.
       setFormData(prev => ({ ...prev, [field]: response.text || '' }));
     } catch (error: any) {
       console.error('AI Error:', error);
-      if (error.message === "API_KEY_MISSING") {
-        alert("Sila masukkan API KEY di Vercel Settings.");
-      } else {
-        alert('AI tidak dapat menjana teks. Sila taip secara manual.');
-      }
+      alert('AI tidak dapat menjana teks. Sila taip secara manual.');
     } finally {
       setLoading(prev => ({ ...prev, [field]: false }));
     }
   };
 
-  const handleInputChange = (e: any) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    if (formData.images.length + files.length > 2) {
+      alert("Maksimum 2 keping gambar sahaja dibenarkan.");
+      return;
+    }
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, images: [...prev.images, reader.result as string] }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
   };
 
   return (
@@ -119,6 +141,7 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
       </div>
 
       <div className="glass-card rounded-[3.5rem] p-8 md:p-14 shadow-2xl border border-white space-y-12">
+        {/* Nama Program */}
         <section className="space-y-4">
           <div className="flex items-center space-x-3 border-b border-rose-100 pb-4">
             <div className="p-2 bg-rose-500 rounded-lg text-white"><Heart size={18} fill="currentColor" /></div>
@@ -129,6 +152,7 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           </div>
         </section>
 
+        {/* Tarikh & Hari */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tarikh Program</label>
@@ -142,8 +166,44 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
             </select>
           </div>
         </section>
+
+        {/* TEMPAT & SASARAN */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+              <MapPin size={12} className="mr-2" /> Tempat Program
+            </label>
+            <select name="tempat" value={formData.tempat} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-50">
+              {TEMPAT_LIST.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            {formData.tempat === 'LAIN-LAIN' && (
+              <input 
+                type="text" 
+                name="tempatLain" 
+                placeholder="Sila nyatakan tempat..." 
+                value={formData.tempatLain} 
+                onChange={handleInputChange} 
+                className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm outline-none animate-in slide-in-from-top-2 duration-300"
+              />
+            )}
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+              <Users size={12} className="mr-2" /> Sasaran
+            </label>
+            <input 
+              type="text" 
+              name="sasaran" 
+              value={formData.sasaran} 
+              onChange={handleInputChange} 
+              placeholder="contoh murid tahun 2 Jasmine" 
+              className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-50"
+            />
+          </div>
+        </section>
         
-        <section className="space-y-4">
+        {/* Objektif Program */}
+        <section className="space-y-4 pt-4 border-t border-slate-50">
           <div className="flex justify-between items-center">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objektif Program</label>
             <button 
@@ -157,7 +217,47 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
           <textarea name="objektif" value={formData.objektif} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl p-5 font-medium text-slate-700 min-h-[100px] outline-none focus:ring-4 focus:ring-rose-50" placeholder="Terangkan objektif program..." />
         </section>
 
-        <section className="space-y-4">
+        {/* Ringkasan Aktiviti */}
+        <section className="space-y-4 pt-4 border-t border-slate-50">
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ringkasan Aktiviti</label>
+            <button 
+              onClick={() => generateWithAI('aktiviti', `Aktiviti program Guru Penyayang di ${formData.tempat}`)} 
+              className={`flex items-center space-x-2 text-[10px] font-black text-white px-4 py-2 rounded-xl transition-all shadow-lg ${loading.aktiviti ? 'bg-slate-400' : 'bg-rose-500 hover:scale-105 active:scale-95'}`}
+            >
+              {loading.aktiviti ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+              <span>{loading.aktiviti ? 'MENJANA...' : 'JANA DENGAN AI'}</span>
+            </button>
+          </div>
+          <textarea name="aktiviti" value={formData.aktiviti} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl p-5 font-medium text-slate-700 min-h-[120px] outline-none focus:ring-4 focus:ring-rose-50" placeholder="Terangkan ringkasan aktiviti yang dijalankan..." />
+        </section>
+
+        {/* Lensa Bergambar */}
+        <section className="space-y-4 pt-4 border-t border-slate-50">
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+             <Camera size={12} className="mr-2"/> Lensa Bergambar (Maksimum 2 Keping)
+           </label>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {formData.images.map((img, idx) => (
+                <div key={idx} className="relative aspect-video rounded-3xl overflow-hidden group shadow-lg border border-slate-100">
+                  <img src={img} className="w-full h-full object-cover" />
+                  <button onClick={() => removeImage(idx)} className="absolute top-4 right-4 p-2 bg-rose-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+                    <Trash2 size={16}/>
+                  </button>
+                </div>
+              ))}
+              {formData.images.length < 2 && (
+                <label className="aspect-video rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-rose-50 transition-all hover:border-rose-400 group">
+                  <Upload size={32} className="text-slate-300 mb-3 group-hover:text-rose-500 transition-colors" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-rose-600">Muat Naik Gambar</span>
+                  <input type="file" className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
+                </label>
+              )}
+           </div>
+        </section>
+
+        {/* Disediakan Oleh */}
+        <section className="space-y-4 pt-4 border-t border-slate-50">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Disediakan Oleh</label>
           <select name="disediakanOleh" value={formData.disediakanOleh} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl py-5 px-6 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-50">
             <option value="">-- Sila Pilih Nama Guru --</option>

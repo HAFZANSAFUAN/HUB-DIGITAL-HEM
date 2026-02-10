@@ -88,12 +88,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ reports, onBack }) => {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const dateOnly = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(':')[0].split(' ')[0];
-    const parts = dateOnly.split('-');
-    if (parts.length === 3 && parts[0].length === 4) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [y, m, d] = dateStr.split('-');
+      return `${parseInt(d)}/${parseInt(m)}/${y}`;
     }
-    return dateOnly;
+
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
   };
 
   return (

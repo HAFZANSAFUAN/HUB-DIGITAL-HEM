@@ -80,7 +80,7 @@ export const HubMenu: React.FC<HubMenuProps> = ({ onMenuClick }) => {
       <MenuCard
         title="LAPORAN PERHIMPUNAN RASMI"
         badge="Mingguan"
-        description="Rakamkan butiran perhimpunan rasmi, amanat guru besar, dan laporan guru bertugas dengan format digital yang kemas."
+        description="Merekod dan mendokumentasikan butiran perhimpunan rasmi serta amanat Pentadbir secara digital dengan susunan yang kemas dan sistematik"
         icon={<School />}
         accentColor="bg-blue-600"
         onClick={() => onMenuClick("LAPORAN PERHIMPUNAN RASMI SEKOLAH")}

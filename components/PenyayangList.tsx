@@ -40,10 +40,19 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const dateOnly = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(':')[0].split(' ')[0];
-    const parts = dateOnly.split('-');
-    if (parts.length === 3 && parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    return dateOnly;
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [y, m, d] = dateStr.split('-');
+      return `${parseInt(d)}/${parseInt(m)}/${y}`;
+    }
+
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
   };
 
   const handleShareWhatsApp = (report: PenyayangReport) => {
@@ -85,7 +94,7 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
         <div class="opr-section"><div class="section-title">LENSA BERGAMBAR</div><div class="section-body" style="padding:10px; display:flex; justify-content:center;">${imageGridHtml}</div></div>
         <div class="opr-footer">
           <div class="signature-box"><p>Disediakan oleh:</p><div class="sig-line"></div><p><strong>${report.disediakanOleh.toUpperCase()}</strong></p></div>
-          <div class="signature-box"><p>Disemak oleh:</p><div class="sig-line"></div><p><strong>PENYELARAS HEM</strong></p></div>
+          <div class="signature-box"><p>Disemak oleh:</p><div class="sig-line"></div><p><strong>PENOLONG KANAN HEM</strong></p></div>
           <div class="signature-box"><p>Disahkan oleh:</p><div class="sig-line"></div><p><strong>PENTADBIR</strong></p></div>
         </div>
       </div>
@@ -123,7 +132,6 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
     printWindow.document.close();
   };
 
-  // Fix: Added handleBulkDownload to allow multi-report PDF generation
   const handleBulkDownload = () => {
     if (selectedIds.size === 0) return;
     const combinedContent = reports.filter(r => selectedIds.has(r.id)).map(r => generateReportBodyHTML(r)).join('');
@@ -253,7 +261,7 @@ export const PenyayangList: React.FC<PenyayangListProps> = ({ reports, onBack, o
               </div>
             );
           })
-        )}
+        }
       </div>
 
       {isBulkMode && selectedIds.size > 0 && (

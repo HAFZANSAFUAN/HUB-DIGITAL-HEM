@@ -43,8 +43,21 @@ const App: React.FC = () => {
         fetch(GOOGLE_SHEET_API_URL).then(res => res.json()),
         fetch(PENYAYANG_API_URL).then(res => res.json())
       ]);
-      if (Array.isArray(resPerhimpunan)) setReports(resPerhimpunan);
-      if (Array.isArray(resPenyayang)) setPenyayangReports(resPenyayang);
+
+      // Menangani Duplikasi: Hanya ambil data paling unik/terkini berdasarkan ID
+      if (Array.isArray(resPerhimpunan)) {
+        const uniqueReports = Array.from(
+          new Map(resPerhimpunan.filter(r => r && r.id).map(item => [item.id, item])).values()
+        );
+        setReports(uniqueReports);
+      }
+      
+      if (Array.isArray(resPenyayang)) {
+        const uniquePenyayang = Array.from(
+          new Map(resPenyayang.filter(r => r && r.id).map(item => [item.id, item])).values()
+        );
+        setPenyayangReports(uniquePenyayang);
+      }
     } catch (error) {
       console.error("Fetch Error:", error);
     }
@@ -75,6 +88,7 @@ const App: React.FC = () => {
     const targetUrl = isPenyayang ? PENYAYANG_API_URL : GOOGLE_SHEET_API_URL;
     setShowSuccess(true);
     setSyncStatus('LOADING');
+    
     fetch(targetUrl, {
       method: 'POST',
       mode: 'no-cors',
@@ -86,8 +100,12 @@ const App: React.FC = () => {
       console.error("Save Error:", err);
       setSyncStatus('ERROR');
     });
+
     setTimeout(() => {
       setShowSuccess(false);
+      // Reset status editing supaya data bersih untuk sesi akan datang
+      setEditingReport(null);
+      setEditingPenyayangReport(null);
       setCurrentView(isPenyayang ? 'PENYAYANG_LIST' : 'LIST');
     }, 2000);
   };

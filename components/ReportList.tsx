@@ -45,10 +45,22 @@ export const ReportList: React.FC<ReportListProps> = ({ reports, onBack, onEdit,
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const dateOnly = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(':')[0].split(' ')[0];
-    const parts = dateOnly.split('-');
-    if (parts.length === 3 && parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    return dateOnly;
+    
+    // Jika format YYYY-MM-DD (format standard input date)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const [y, m, d] = dateStr.split('-');
+      // Mengikut kehendak user: 10/2/2026 (tanpa leading zero jika perlu, tetapi DD/MM/YYYY lebih selamat)
+      return `${parseInt(d)}/${parseInt(m)}/${y}`;
+    }
+
+    // Fallback jika format berbeza
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
   };
 
   const formatTime = (timeStr: string) => {
@@ -57,16 +69,17 @@ export const ReportList: React.FC<ReportListProps> = ({ reports, onBack, onEdit,
       let hours: number, minutes: number;
       if (timeStr.includes('T')) {
         const date = new Date(timeStr);
-        hours = date.getUTCHours();
-        minutes = date.getUTCMinutes();
+        hours = date.getHours(); 
+        minutes = date.getMinutes();
       } else if (timeStr.includes(':')) {
-        const [h, m] = timeStr.split(':');
-        hours = parseInt(h);
-        minutes = parseInt(m);
+        const parts = timeStr.split(':');
+        hours = parseInt(parts[0]);
+        minutes = parseInt(parts[1]);
       } else return timeStr;
+      
       const ampm = hours >= 12 ? 'P.M.' : 'A.M.';
       const displayHours = hours % 12 || 12;
-      const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+      const displayMinutes = String(minutes).padStart(2, '0');
       return `${displayHours}:${displayMinutes} ${ampm}`;
     } catch (e) { return timeStr; }
   };
@@ -254,7 +267,7 @@ export const ReportList: React.FC<ReportListProps> = ({ reports, onBack, onEdit,
               </div>
             );
           })
-        )}
+        }
       </div>
 
       {/* Floating Action Button for Bulk Mode */}

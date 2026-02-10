@@ -5,7 +5,7 @@ import {
   Sparkles, Loader2, Upload, Save, User, ArrowLeft, 
   Image as ImageIcon, X, Trash2
 } from 'lucide-react';
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 interface Report {
   id: string;
@@ -102,24 +102,27 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     updateDateTime();
   }, [formData.tarikh]);
 
-  // Fix: Use simple string contents to avoid type ambiguity errors with Part and Blob types.
+  // Generate content using Gemini API
   const generateWithAI = async (field: keyof Report, context: string) => {
     setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
-      // Use process.env.API_KEY directly as per guidelines.
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      // Initialize GoogleGenAI instance with apiKey directly from process.env
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const prompt = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
-      // Use standard direct string for contents for text generation tasks.
+      // Fix: Use explicit content parts structure to resolve Type unknown/Blob inference errors
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: prompt,
+        contents: [{ parts: [{ text: prompt }] }],
       });
       
-      // Access the .text property directly (not a method) as per SDK guidelines.
+      // Accessing .text property directly (not a method).
       const generatedText = response.text || '';
-      setFormData(prev => ({ ...prev, [field]: generatedText }));
+      // Ensure we only update string fields to prevent type mismatch with string array fields like 'images'.
+      if (typeof (formData as any)[field] === 'string') {
+        setFormData(prev => ({ ...prev, [field]: generatedText }));
+      }
     } catch (error) {
       console.error("AI Error:", error);
       alert("Gagal menjana teks. Sila cuba lagi.");
@@ -196,7 +199,13 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
            </div>
            <div className="space-y-2">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><Clock size={12} className="mr-2"/> Masa</label>
-             <div className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-600 text-sm">{formData.masa}</div>
+             <input 
+               type="time" 
+               name="masa" 
+               value={formData.masa} 
+               onChange={handleInputChange} 
+               className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-50 text-sm cursor-pointer" 
+             />
            </div>
         </div>
 
@@ -261,7 +270,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Ucapan Guru (Minggu Ini - AI)</label>
-              <button onClick={() => generateWithAI('ucapanGuruIni', 'Pesanan disiplin dan motivasi untuk murid-murid minggu ini')} disabled={loading.ucapanGuruIni} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-600 transition-all">
+              <button onClick={() => generateWithAI('ucapanGuruIni', 'Pesanan disiplin and motivasi untuk murid-murid minggu ini')} disabled={loading.ucapanGuruIni} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-600 transition-all">
                 {loading.ucapanGuruIni ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               </button>
             </div>

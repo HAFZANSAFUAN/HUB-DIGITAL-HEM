@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
+// Memberitahu TypeScript supaya tidak ralat dengan process.env di Vercel
+declare const process: any;
+
 interface Report {
   id: string;
   tarikh: string;
@@ -103,20 +106,18 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
     updateDateTime();
   }, [formData.tarikh]);
 
+  // Fix: Correctly initialize GoogleGenAI and call generateContent as per guidelines
   const generateWithAI = async (field: keyof Report, context: string) => {
     setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
-      // Corrected initialization using process.env.API_KEY directly as per SDK guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
-      // Removed 'as any' and using standard string format for contents to avoid type confusion with Blob
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: promptText,
       });
       
-      // Access text directly from response object (response.text) as per guidelines
       const generatedText = response.text || '';
       if (typeof (formData as any)[field] === 'string') {
         setFormData(prev => ({ ...prev, [field]: generatedText }));
@@ -168,8 +169,11 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
   return (
     <div className="max-w-4xl mx-auto pb-20 px-4 animate-in fade-in slide-in-from-bottom-5 duration-700 text-left">
       <div className="flex items-center justify-between mb-10">
-        <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 hover:text-blue-600 font-bold transition-all">
-          <ArrowLeft size={20} /><span>Kembali</span>
+        <button onClick={onBack} className="flex items-center space-x-3 text-slate-500 hover:text-blue-600 font-bold transition-all group">
+          <div className="p-3 rounded-2xl bg-white shadow-md border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all">
+            <ArrowLeft size={20} />
+          </div>
+          <span>Kembali</span>
         </button>
         <div className="text-right">
           <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter leading-none">BORANG LAPORAN PERHIMPUNAN</h2>
@@ -253,7 +257,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">1. Ucapan Guru (Minggu Lepas - AI)</label>
-              <button onClick={() => generateWithAI('ucapanGuruLepas', 'Laporan ringkas disiplin dan kebersihan murid minggu lepas')} disabled={loading.ucapanGuruLepas} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-600 transition-all">
+              <button onClick={() => generateWithAI('ucapanGuruLepas', 'Laporan ringkas disiplin and kebersihan murid minggu lepas')} disabled={loading.ucapanGuruLepas} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-600 transition-all">
                 {loading.ucapanGuruLepas ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               </button>
             </div>

@@ -3,16 +3,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
-// Isytihar process.env dengan cara yang lebih selamat untuk fasa build
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      API_KEY: string;
-      [key: string]: string | undefined;
-    }
-  }
-}
-
 const startApp = () => {
   const rootElement = document.getElementById('root');
   if (rootElement) {
@@ -23,7 +13,6 @@ const startApp = () => {
       </React.StrictMode>
     );
     
-    // Sembunyikan loading indicator selepas React sedia
     const loader = document.getElementById('initial-loading');
     if (loader) {
       loader.style.opacity = '0';
@@ -34,7 +23,6 @@ const startApp = () => {
   }
 };
 
-// Pastikan DOM sedia sebelum run
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   startApp();
 } else {

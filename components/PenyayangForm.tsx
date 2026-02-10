@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
+// Memberitahu TypeScript supaya tidak ralat dengan process.env di Vercel
+declare const process: any;
+
 interface PenyayangReport {
   id: string;
   program: string;
@@ -80,20 +83,19 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
     }
   }, [formData.tarikh]);
 
+  // Fix: Correctly initialize GoogleGenAI and call generateContent as per guidelines
   const generateWithAI = async (field: string, promptText: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
-      // Corrected initialization using process.env.API_KEY directly as per SDK guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptValue = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
       
-      // Removed 'as any' and using standard string format for contents to avoid type confusion with Blob
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: promptValue,
       });
-      // Access text directly from response object (response.text) as per guidelines
-      setFormData(prev => ({ ...prev, [field]: response.text || '' }));
+      const generatedText = response.text || '';
+      setFormData(prev => ({ ...prev, [field]: generatedText }));
     } catch (error: any) {
       console.error('AI Error:', error);
       alert('AI tidak dapat menjana teks. Sila taip secara manual.');

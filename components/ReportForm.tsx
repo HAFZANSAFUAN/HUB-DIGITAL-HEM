@@ -7,9 +7,6 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
-// Menggunakan casting any untuk process.env bagi mengelakkan ralat TS semasa build di Vercel
-// Removed manual ENV definition as per guidelines
-
 interface Report {
   id: string;
   tarikh: string;
@@ -35,35 +32,17 @@ const KUMPULAN_GURU: { [key: string]: string } = {
 };
 
 const SENARAI_GURU_PENYEDIA = [
-  "AHMAD FAIZ BIN OSMAN",
-  "AHMAD MUHAIMIN BIN ABDU RAHIM",
-  "ANBALAGAN A/L VELU",
-  "CHONG FOONG LING",
-  "CHUA KAR LING",
-  "FARAH FATIHAH BINTI MEGAT AHMAD FAUZI",
-  "FATIN NUR THAQIFAH BINTI KAMARUZZAMAN",
-  "HAFZAN SAFUAN BIN SHAMSUDDIN",
-  "HARSHARANJIT KAUR A/P TEJINDER SINGH",
-  "KALISWARY A/P BALIAYAN",
-  "MOHD RAZIL BIN MD ATAN",
-  "MUHAMMAD DAMSHIK BIN DANIAL",
-  "MUHAMMAD FARHAN B AHAMAD KAMAL",
-  "MUHD. ZUL' AMIN BIN MD ISA",
-  "NAZHATULNAJIHAH BINTI HASHIM",
-  "NIK NUR A'LIYAH BINTI MOHD KAMAROLZAMAN",
-  "NIK NUR KAMILIA BT NIK MAWARDI",
-  "NOR AIZA BINTI AYOB",
-  "NORHAZME AFIQAH BINTI AROME",
-  "RITA SELVAMALAR A/P JOHN STEPHEN HENRY",
-  "ROZANI BINTI MURI",
-  "SAMARU B DAUD",
-  "SHAARIEGAA GANESARAO",
-  "SITI AZLIN BT MOHAMMAD",
-  "SITI KHADIJAH BINTI MUHAMMAD",
-  "TAI SEE NEE",
-  "WONG AI WEE",
-  "ZAINAB BINTI RAHMAT",
-  "ZUFADHILA BINTI NASRI",
+  "AHMAD FAIZ BIN OSMAN", "AHMAD MUHAIMIN BIN ABDU RAHIM", "ANBALAGAN A/L VELU",
+  "CHONG FOONG LING", "CHUA KAR LING", "FARAH FATIHAH BINTI MEGAT AHMAD FAUZI",
+  "FATIN NUR THAQIFAH BINTI KAMARUZZAMAN", "HAFZAN SAFUAN BIN SHAMSUDDIN",
+  "HARSHARANJIT KAUR A/P TEJINDER SINGH", "KALISWARY A/P BALIAYAN",
+  "MOHD RAZIL BIN MD ATAN", "MUHAMMAD DAMSHIK BIN DANIAL",
+  "MUHAMMAD FARHAN B AHAMAD KAMAL", "MUHD. ZUL' AMIN BIN MD ISA",
+  "NAZHATULNAJIHAH BINTI HASHIM", "NIK NUR A'LIYAH BINTI MOHD KAMAROLZAMAN",
+  "NIK NUR KAMILIA BT NIK MAWARDI", "NOR AIZA BINTI AYOB", "NORHAZME AFIQAH BINTI AROME",
+  "RITA SELVAMALAR A/P JOHN STEPHEN HENRY", "ROZANI BINTI MURI", "SAMARU B DAUD",
+  "SHAARIEGAA GANESARAO", "SITI AZLIN BT MOHAMMAD", "SITI KHADIJAH BINTI MUHAMMAD",
+  "TAI SEE NEE", "WONG AI WEE", "ZAINAB BINTI RAHMAT", "ZUFADHILA BINTI NASRI",
   "MOHAMMAD AKIF BIN JAMAWI"
 ].sort();
 
@@ -90,7 +69,6 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
 
   useEffect(() => {
     const updateDateTime = () => {
-      const now = new Date();
       const days = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
       const parts = formData.tarikh.split('-');
       if (parts.length === 3) {
@@ -98,9 +76,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
         const m = parseInt(parts[1]) - 1;
         const d = parseInt(parts[2]);
         const dateObj = new Date(y, m, d);
-        const dayName = days[dateObj.getDay()];
-        const timeStr = now.toLocaleTimeString('ms-MY', { hour12: false, hour: '2-digit', minute: '2-digit' });
-        setFormData(prev => ({ ...prev, hari: dayName, masa: prev.masa || timeStr }));
+        setFormData(prev => ({ ...prev, hari: days[dateObj.getDay()] }));
       }
     };
     updateDateTime();
@@ -109,15 +85,14 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
   const generateWithAI = async (field: keyof Report, context: string) => {
     setLoading(prev => ({ ...prev, [field as string]: true }));
     try {
-      // Create a new GoogleGenAI instance right before making an API call 
-      // using process.env.API_KEY directly as per guidelines.
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      // Create ai client using process.env.API_KEY directly as per guidelines
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptText = `Tulis satu ${field.toString().replace(/([A-Z])/g, ' $1').toLowerCase()} ringkas (MAKSIMUM 40 PATAH PERKATAAN) untuk perhimpunan sekolah SK Methodist Petaling Jaya. Konteks: ${context}. Sila berikan jawapan dalam Bahasa Melayu yang padat.`;
       
-      // Fix: Use an explicit parts object for contents to resolve typing conflicts with global Blob types
+      // Fix: Use explicit content structure to avoid Type/Blob conflict errors in some environments
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: { parts: [{ text: promptText }] },
+        contents: [{ role: 'user', parts: [{ text: promptText }] }],
       });
       
       const generatedText = response.text || '';
@@ -201,13 +176,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
            </div>
            <div className="space-y-2">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><Clock size={12} className="mr-2"/> Masa</label>
-             <input 
-               type="time" 
-               name="masa" 
-               value={formData.masa} 
-               onChange={handleInputChange} 
-               className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-50 text-sm cursor-pointer" 
-             />
+             <input type="time" name="masa" value={formData.masa} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-50 text-sm cursor-pointer" />
            </div>
         </div>
 
@@ -232,9 +201,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
 
         <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 text-left shadow-xl animate-in fade-in duration-500">
            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3">Ahli Kumpulan {formData.kumpulan}:</p>
-           <p className="text-xs font-black text-white leading-relaxed uppercase tracking-tight">
-             {KUMPULAN_GURU[formData.kumpulan]}
-           </p>
+           <p className="text-xs font-black text-white leading-relaxed uppercase tracking-tight">{KUMPULAN_GURU[formData.kumpulan]}</p>
         </div>
 
         <div className="space-y-6 pt-4 border-t border-slate-100">
@@ -268,7 +235,7 @@ export const ReportForm: React.FC<{ onBack: () => void, onSave: (report: any) =>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Ucapan Guru (Minggu Ini - AI)</label>
-              <button onClick={() => generateWithAI('ucapanGuruIni', 'Pesanan disiplin and motivasi untuk murid-murid minggu ini')} disabled={loading.ucapanGuruIni} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-100 text-blue-600 transition-all">
+              <button onClick={() => generateWithAI('ucapanGuruIni', 'Pesanan disiplin and motivasi untuk murid-murid minggu ini')} disabled={loading.ucapanGuruIni} className="p-2 bg-slate-100 rounded-lg hover:bg-blue-100 text-blue-600 transition-all">
                 {loading.ucapanGuruIni ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               </button>
             </div>

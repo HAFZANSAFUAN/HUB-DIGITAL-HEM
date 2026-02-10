@@ -7,9 +7,6 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
-// Menggunakan casting any untuk process.env bagi mengelakkan ralat TS semasa build di Vercel
-// Removed manual ENV definition as per guidelines
-
 interface PenyayangReport {
   id: string;
   program: string;
@@ -46,12 +43,8 @@ const SENARAI_GURU = [
 ].sort();
 
 const TEMPAT_LIST = [
-  "DEWAN SEMARAK ILMU",
-  "KANTIN",
-  "KELAS",
-  "BILIK KAUNSELING",
-  "PINTU PAGAR UTAMA SEKOLAH",
-  "LAIN-LAIN"
+  "DEWAN SEMARAK ILMU", "KANTIN", "KELAS", "BILIK KAUNSELING", 
+  "PINTU PAGAR UTAMA SEKOLAH", "LAIN-LAIN"
 ];
 
 export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, initialData }) => {
@@ -86,15 +79,14 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
   const generateWithAI = async (field: string, promptText: string) => {
     setLoading(prev => ({ ...prev, [field]: true }));
     try {
-      // Create a new GoogleGenAI instance right before making an API call 
-      // using process.env.API_KEY directly as per guidelines.
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      // Use process.env.API_KEY directly as per guidelines
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const promptValue = `Hasilkan satu ${field} ringkas dan menarik (maksimum 40 patah perkataan) untuk laporan program Guru Penyayang sekolah. Tema: ${promptText || 'Amalan Guru Penyayang'}.`;
       
-      // Fix: Use an explicit parts object for contents to resolve typing conflicts with global Blob types
+      // Fix: Use explicit content structure to avoid Type/Blob conflict errors in some environments
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: { parts: [{ text: promptValue }] },
+        contents: [{ role: 'user', parts: [{ text: promptValue }] }],
       });
       const generatedText = response.text || '';
       setFormData(prev => ({ ...prev, [field]: generatedText }));
@@ -170,45 +162,24 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-              <MapPin size={12} className="mr-2" /> Tempat Program
-            </label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><MapPin size={12} className="mr-2" /> Tempat Program</label>
             <select name="tempat" value={formData.tempat} onChange={handleInputChange} className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-50">
               {TEMPAT_LIST.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
             {formData.tempat === 'LAIN-LAIN' && (
-              <input 
-                type="text" 
-                name="tempatLain" 
-                placeholder="Sila nyatakan tempat..." 
-                value={formData.tempatLain} 
-                onChange={handleInputChange} 
-                className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm outline-none animate-in slide-in-from-top-2 duration-300"
-              />
+              <input type="text" name="tempatLain" placeholder="Sila nyatakan tempat..." value={formData.tempatLain} onChange={handleInputChange} className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm outline-none animate-in slide-in-from-top-2 duration-300" />
             )}
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-              <Users size={12} className="mr-2" /> Sasaran
-            </label>
-            <input 
-              type="text" 
-              name="sasaran" 
-              value={formData.sasaran} 
-              onChange={handleInputChange} 
-              placeholder="contoh murid tahun 2 Jasmine" 
-              className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-50"
-            />
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><Users size={12} className="mr-2" /> Sasaran</label>
+            <input type="text" name="sasaran" value={formData.sasaran} onChange={handleInputChange} placeholder="contoh murid tahun 2 Jasmine" className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-50" />
           </div>
         </section>
         
         <section className="space-y-4 pt-4 border-t border-slate-50">
           <div className="flex justify-between items-center">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objektif Program</label>
-            <button 
-              onClick={() => generateWithAI('objektif', formData.program)} 
-              className={`flex items-center space-x-2 text-[10px] font-black text-white px-4 py-2 rounded-xl transition-all shadow-lg ${loading.objektif ? 'bg-slate-400' : 'bg-rose-500 hover:scale-105 active:scale-95 animate-pulse-soft'}`}
-            >
+            <button onClick={() => generateWithAI('objektif', formData.program)} className={`flex items-center space-x-2 text-[10px] font-black text-white px-4 py-2 rounded-xl transition-all shadow-lg ${loading.objektif ? 'bg-slate-400' : 'bg-rose-500 hover:scale-105 active:scale-95 animate-pulse-soft'}`}>
               {loading.objektif ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               <span>{loading.objektif ? 'MENJANA...' : 'JANA DENGAN AI'}</span>
             </button>
@@ -219,10 +190,7 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
         <section className="space-y-4 pt-4 border-t border-slate-50">
           <div className="flex justify-between items-center">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ringkasan Aktiviti</label>
-            <button 
-              onClick={() => generateWithAI('aktiviti', `Aktiviti program Guru Penyayang di ${formData.tempat}`)} 
-              className={`flex items-center space-x-2 text-[10px] font-black text-white px-4 py-2 rounded-xl transition-all shadow-lg ${loading.aktiviti ? 'bg-slate-400' : 'bg-rose-500 hover:scale-105 active:scale-95'}`}
-            >
+            <button onClick={() => generateWithAI('aktiviti', `Aktiviti program Guru Penyayang di ${formData.tempat}`)} className={`flex items-center space-x-2 text-[10px] font-black text-white px-4 py-2 rounded-xl transition-all shadow-lg ${loading.aktiviti ? 'bg-slate-400' : 'bg-rose-500 hover:scale-105 active:scale-95'}`}>
               {loading.aktiviti ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
               <span>{loading.aktiviti ? 'MENJANA...' : 'JANA DENGAN AI'}</span>
             </button>
@@ -231,22 +199,18 @@ export const PenyayangForm: React.FC<PenyayangFormProps> = ({ onBack, onSave, in
         </section>
 
         <section className="space-y-4 pt-4 border-t border-slate-50">
-           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-             <Camera size={12} className="mr-2"/> Lensa Bergambar (Maksimum 2 Keping)
-           </label>
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center"><Camera size={12} className="mr-2"/> Lensa Bergambar (Maksimum 2 Keping)</label>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {formData.images.map((img, idx) => (
                 <div key={idx} className="relative aspect-video rounded-3xl overflow-hidden group shadow-lg border border-slate-100">
                   <img src={img} className="w-full h-full object-cover" />
-                  <button onClick={() => removeImage(idx)} className="absolute top-4 right-4 p-2 bg-rose-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-lg">
-                    <Trash2 size={16}/>
-                  </button>
+                  <button onClick={() => removeImage(idx)} className="absolute top-4 right-4 p-2 bg-rose-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-lg"><Trash2 size={16}/></button>
                 </div>
               ))}
               {formData.images.length < 2 && (
                 <label className="aspect-video rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-rose-50 transition-all hover:border-rose-400 group">
                   <Upload size={32} className="text-slate-300 mb-3 group-hover:text-rose-500 transition-colors" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-rose-600">Muat Naik Gambar</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-600">Muat Naik Gambar</span>
                   <input type="file" className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
                 </label>
               )}
